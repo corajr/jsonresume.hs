@@ -118,24 +118,21 @@ data Organization = Organization
                   , orgHighlights :: [T.Text] -- ^ Specify multiple accomplishments, e.g. Increased profits by 20% from 2011-2012 through viral advertising
                   } deriving (Eq, Read, Show)
 
--- | Specify that you worked at a particular @Organization@ (as opposed to
--- volunteering there)
-newtype Work = Work Organization deriving (Eq, Read, Show)
+parseOrganization :: T.Text -> Value -> Parser Organization
+parseOrganization orgNameKey (Object v) =
+  Organization <$> v .:? orgNameKey
+               <*> v .:? "position"
+               <*> v .:? "website"
+               <*> potentially dateFromJSON v "startDate"
+               <*> potentially dateFromJSON v "endDate"
+               <*> v .:? "summary"
+               <*> v .:? "highlights" .!= []
+parseOrganization _ _ = mzero
 
-instance FromJSON Work where
-  parseJSON (Object v) = fmap Work $
-    Organization <$> v .:? "company"
-                 <*> v .:? "position"
-                 <*> v .:? "website"
-                 <*> potentially dateFromJSON v "startDate"
-                 <*> potentially dateFromJSON v "endDate"
-                 <*> v .:? "summary"
-                 <*> v .:? "highlights" .!= []
-  parseJSON _ = mzero
-
-instance ToJSON Work where
-  toJSON (Work (Organization n p web start end smry hl)) = object
-    [ "company"    .= n
+orgToJSON :: T.Text -> Organization -> Value
+orgToJSON orgNameKey (Organization n p web start end smry hl) =
+  object
+    [ orgNameKey   .= n
     , "position"   .= p
     , "website"    .= web
     , ("startDate",   toJSON $ dateToJSON <$> start)
@@ -144,31 +141,25 @@ instance ToJSON Work where
     , "highlights" .= hl
     ]
 
+-- | Specify that you worked at a particular @Organization@ (as opposed to
+-- volunteering there)
+newtype Work = Work Organization deriving (Eq, Read, Show)
+
+instance FromJSON Work where
+  parseJSON = fmap Work . parseOrganization "company"
+
+instance ToJSON Work where
+  toJSON (Work org) = orgToJSON "company" org
+
 -- | Specify that you volunteered at a particular @Organization@ (as opposed to
 -- working there)
 newtype Volunteer = Volunteer Organization deriving (Eq, Read, Show)
 
 instance FromJSON Volunteer where
-  parseJSON (Object v) = fmap Volunteer $
-    Organization <$> v .:? "organization"
-                 <*> v .:? "position"
-                 <*> v .:? "website"
-                 <*> potentially dateFromJSON v "startDate"
-                 <*> potentially dateFromJSON v "endDate"
-                 <*> v .:? "summary"
-                 <*> v .:? "highlights" .!= []
-  parseJSON _ = mzero
+  parseJSON = fmap Volunteer . parseOrganization "organization"
 
 instance ToJSON Volunteer where
-  toJSON (Volunteer (Organization n p web start end smry hl)) = object
-    [ "organization" .= n
-    , "position"     .= p
-    , "website"      .= web
-    , ("startDate",     toJSON $ dateToJSON <$> start)
-    , ("endDate",       toJSON $ dateToJSON <$> end)
-    , "summary"      .= smry
-    , "highlights"   .= hl
-    ]
+  toJSON (Volunteer org) = orgToJSON "organization" org
 
 -- | Educational history
 data Education = Education
