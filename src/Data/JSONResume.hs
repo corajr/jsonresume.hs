@@ -116,6 +116,7 @@ data Organization = Organization
                   , orgEndDate    :: Maybe UTCTime  -- ^ e.g. 2012-06-29
                   , orgSummary    :: Maybe T.Text   -- ^ Give an overview of your responsibilities at the company
                   , orgHighlights :: [T.Text] -- ^ Specify multiple accomplishments, e.g. Increased profits by 20% from 2011-2012 through viral advertising
+                  , orgMeta       :: Maybe Value -- ^ Tooling-specific info
                   } deriving (Eq, Read, Show)
 
 parseOrganization :: T.Text -> Value -> Parser Organization
@@ -127,10 +128,11 @@ parseOrganization orgNameKey (Object v) =
                <*> potentially dateFromJSON v "endDate"
                <*> v .:? "summary"
                <*> v .:? "highlights" .!= []
+               <*> v .:? "meta"
 parseOrganization _ _ = mzero
 
 orgToJSON :: T.Text -> Organization -> Value
-orgToJSON orgNameKey (Organization n p web start end smry hl) =
+orgToJSON orgNameKey (Organization n p web start end smry hl meta) =
   object
     [ orgNameKey   .= n
     , "position"   .= p
@@ -139,6 +141,7 @@ orgToJSON orgNameKey (Organization n p web start end smry hl) =
     , ("endDate",     toJSON $ dateToJSON <$> end)
     , "summary"    .= smry
     , "highlights" .= hl
+    , "meta"       .= meta
     ]
 
 -- | Specify that you worked at a particular @Organization@ (as opposed to

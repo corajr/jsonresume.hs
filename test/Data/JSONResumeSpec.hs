@@ -120,6 +120,7 @@ workParsed = Work $ Organization
   , orgEndDate = Just $ UTCTime (fromGregorian 2014 12 01) 0
   , orgSummary = Just "Pied Piper is a multi-platform technology based on a proprietary universal compression algorithm that has consistently fielded high Weisman Scores that are not merely competitive, but approach the theoretical limit of lossless compression."
   , orgHighlights = ["Build an algorithm for artist to detect if their music was violating copy right infringement laws","Successfully won Techcrunch Disrupt","Optimized an algorithm that holds the current world record for Weisman Scores"]
+  , orgMeta = Nothing
   }
 
 volunteerJSON :: ByteString
@@ -146,6 +147,7 @@ volunteerParsed = Volunteer $ Organization
   , orgEndDate = Just $ UTCTime (fromGregorian 2013 1 1) 0
   , orgSummary = Just "Global movement of free coding clubs for young people."
   , orgHighlights = ["Awarded 'Teacher of the Month'"]
+  , orgMeta = Nothing
   }
 
 educationJSON :: ByteString
