@@ -277,7 +277,7 @@ resumeJSON :: ByteString
 resumeJSON = [hereFile|test/resume.json|]
 
 resumeParsed :: Resume
-resumeParsed = Resume b w v e a p s l i r
+resumeParsed = Resume b w v e a p s l i r m
   where
     b = Just basicsParsed
     w = [workParsed]
@@ -289,6 +289,7 @@ resumeParsed = Resume b w v e a p s l i r
     l = [languageParsed]
     i = [interestParsed]
     r = [referenceParsed]
+    m = Nothing
 
 main :: IO ()
 main = hspec spec

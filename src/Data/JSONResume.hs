@@ -299,6 +299,7 @@ data Resume = Resume
             , languages    :: [Language]
             , interests    :: [Interest]
             , references   :: [Reference]
+            , meta         :: Maybe Value
             } deriving (Eq, Read, Show)
 
 instance FromJSON Resume where
@@ -313,10 +314,11 @@ instance FromJSON Resume where
            <*> v .:? "languages"    .!= []
            <*> v .:? "interests"    .!= []
            <*> v .:? "references"   .!= []
+           <*> v .:? "meta"
   parseJSON _ = mzero
 
 instance ToJSON Resume where
-  toJSON (Resume b w v e a p s l i r) = object
+  toJSON (Resume b w v e a p s l i r m) = object
     [ "basics"       .= b
     , "work"         .= w
     , "volunteer"    .= v
@@ -327,5 +329,6 @@ instance ToJSON Resume where
     , "languages"    .= l
     , "interests"    .= i
     , "references"   .= r
+    , "meta"         .= m
     ]
 
