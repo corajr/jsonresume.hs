@@ -55,7 +55,7 @@ data Resume = Resume
             , languages    :: [Language]
             , interests    :: [Interest]
             , references   :: [Reference]
-            } deriving (Read, Show)
+            } deriving (Eq, Read, Show)
 
 instance FromJSON Resume where
   parseJSON (Object v) =
@@ -98,7 +98,7 @@ data Address = Address
              , city        :: Maybe T.Text
              , countryCode :: Maybe T.Text -- ^ Code as per ISO-3166-1 ALPHA-2, e.g. US, AU, IN
              , region      :: Maybe T.Text -- ^ The general region where you live. Can be a US state, or a province, for instance.
-             } deriving (Read, Show)
+             } deriving (Eq, Read, Show)
 
 instance FromJSON Address where
   parseJSON (Object v) =
@@ -123,7 +123,7 @@ data Profile = Profile
              { network  :: Maybe T.Text -- ^ e.g. Facebook or Twitter
              , username :: Maybe T.Text -- ^ e.g. neutralthoughts
              , url      :: Maybe URL    -- ^ e.g. http://twitter.com/neutralthoughts
-             } deriving (Read, Show)
+             } deriving (Eq, Read, Show)
 
 instance FromJSON Profile where
   parseJSON (Object v) =
@@ -150,7 +150,7 @@ data Basics = Basics
             , summary  :: Maybe T.Text       -- ^ Write a short 2-3 sentence biography about yourself
             , location :: Maybe Address
             , profiles :: [Profile]
-            } deriving (Read, Show)
+            } deriving (Eq, Read, Show)
 
 instance FromJSON Basics where
   parseJSON (Object v) =
@@ -188,11 +188,11 @@ data Organization = Organization
                   , orgEndDate       :: Maybe UTCTime  -- ^ e.g. 2012-06-29
                   , orgSummary       :: Maybe T.Text   -- ^ Give an overview of your responsibilities at the company
                   , orgHighlights    :: [T.Text] -- ^ Specify multiple accomplishments, e.g. Increased profits by 20% from 2011-2012 through viral advertising
-                  } deriving (Read, Show)
+                  } deriving (Eq, Read, Show)
 
 -- | Specify that you worked at a particular @Organization@ (as opposed to
 -- volunteering there)
-newtype Work = Work Organization deriving (Read, Show)
+newtype Work = Work Organization deriving (Eq, Read, Show)
 
 instance FromJSON Work where
   parseJSON (Object v) = fmap Work $
@@ -218,7 +218,7 @@ instance ToJSON Work where
 
 -- | Specify that you volunteered at a particular @Organization@ (as opposed to
 -- working there)
-newtype Volunteer = Volunteer Organization deriving (Read, Show)
+newtype Volunteer = Volunteer Organization deriving (Eq, Read, Show)
 
 instance FromJSON Volunteer where
   parseJSON (Object v) = fmap Volunteer $
@@ -251,7 +251,7 @@ data Education = Education
                , endDate     :: Maybe UTCTime  -- ^ e.g. 2014-06-29
                , gpa         :: Maybe T.Text   -- ^ grade point average, e.g. 3.67/4.0
                , courses     :: [T.Text] -- ^ List notable courses/subjects, e.g. H1302 - Introduction to American history
-               } deriving (Read, Show)
+               } deriving (Eq, Read, Show)
 
 instance FromJSON Education where
   parseJSON (Object v) =
@@ -281,7 +281,7 @@ data Award = Award
            , date         :: Maybe UTCTime -- ^ e.g. 1989-06-12
            , awarder      :: Maybe T.Text  -- ^ e.g. Time Magazine
            , awardSummary :: Maybe T.Text  -- ^ e.g. Received for my work with Quantum Physics
-           } deriving (Read, Show)
+           } deriving (Eq, Read, Show)
 
 instance FromJSON Award where
   parseJSON (Object v) =
@@ -306,7 +306,7 @@ data Publication = Publication
                  , pubReleaseDate :: Maybe UTCTime -- ^ e.g. 1990-08-01
                  , pubSite        :: Maybe URL     -- ^ e.g. http://www.computer.org/csdl/mags/co/1996/10/rx069-abs.html
                  , pubSummary     :: Maybe T.Text  -- ^ Short summary of publication. e.g. Discussion of the World Wide Web, HTTP, HTML.
-                 } deriving (Read, Show)
+                 } deriving (Eq, Read, Show)
 
 instance FromJSON Publication where
   parseJSON (Object v) =
@@ -331,7 +331,7 @@ data Skill = Skill
            { skillName     :: Maybe T.Text   -- ^ e.g. Web Development
            , skillLevel    :: Maybe T.Text   -- ^ e.g. Master
            , skillKeywords :: [T.Text] -- ^ List some keywords pertaining to this skill, e.g. HTML
-           } deriving (Read, Show)
+           } deriving (Eq, Read, Show)
 
 instance FromJSON Skill where
   parseJSON (Object v) =
@@ -351,7 +351,7 @@ instance ToJSON Skill where
 data Language = Language
               { language :: Maybe T.Text -- ^ e.g. English, Spanish
               , fluency  :: Maybe T.Text -- ^ e.g. Fluent, Beginner
-              } deriving (Read, Show)
+              } deriving (Eq, Read, Show)
 
 instance FromJSON Language where
   parseJSON (Object v) =
@@ -368,7 +368,7 @@ instance ToJSON Language where
 data Interest = Interest
               { interestName     :: Maybe T.Text   -- ^ e.g. Philosophy
               , interestKeywords :: [T.Text] -- ^ e.g. Friedrich Nietzsche
-              } deriving (Read, Show)
+              } deriving (Eq, Read, Show)
 
 instance FromJSON Interest where
   parseJSON (Object v) =
@@ -386,7 +386,7 @@ instance ToJSON Interest where
 data Reference = Reference
                { refName   :: Maybe T.Text -- ^ e.g. Timothy Cook
                , reference :: Maybe T.Text -- ^ e.g. Joe blogs was a great employee, who turned up to work at least once a week. He exceeded my expectations when it came to doing nothing.
-               } deriving (Read, Show)
+               } deriving (Eq, Read, Show)
 
 instance FromJSON Reference where
   parseJSON (Object v) =
