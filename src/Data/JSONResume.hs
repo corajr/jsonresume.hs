@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 -- | This module provides a native Haskell representation for the JSON Resume
 -- scheme, as defined at
@@ -31,19 +31,19 @@ module Data.JSONResume
   , Reference (..)
   ) where
 
-import qualified Data.Text           as T
 import qualified Data.HashMap.Strict as H
+import qualified Data.Text           as T
 
-import Data.Char (toLower)
-import Data.Time           (UTCTime)
-import Data.Time.Format    (formatTime, parseTimeM, defaultTimeLocale)
-import Data.Aeson          (ToJSON (..), FromJSON (..), Value (..),
-                            object, (.:?), (.!=), (.=), withText)
-import Data.Aeson.TH
-import Data.Aeson.Types    (Parser)
+import           Data.Aeson          (FromJSON (..), ToJSON (..), Value (..),
+                                      object, withText, (.!=), (.:?), (.=))
+import           Data.Aeson.TH
+import           Data.Aeson.Types    (Parser)
+import           Data.Char           (toLower)
+import           Data.Time           (UTCTime)
+import           Data.Time.Format    (defaultTimeLocale, formatTime, parseTimeM)
 
-import Control.Applicative (Applicative (..), (<$>), (<*>), pure)
-import Control.Monad       (mzero)
+import           Control.Applicative (Applicative (..), pure, (<$>), (<*>))
+import           Control.Monad       (mzero)
 
 -- A couple of utility functions to help with parsing --
 -- At the top due to TH
@@ -104,42 +104,18 @@ data Basics = Basics
             , profiles :: [Profile]
             } deriving (Eq, Read, Show)
 
-instance FromJSON Basics where
-  parseJSON (Object v) =
-    Basics <$> v .:? "name"
-           <*> v .:? "label"
-           <*> v .:? "picture"
-           <*> v .:? "email"
-           <*> v .:? "phone"
-           <*> v .:? "website"
-           <*> v .:? "summary"
-           <*> v .:? "location"
-           <*> v .:? "profiles" .!= []
-  parseJSON _ = mzero
-
-instance ToJSON Basics where
-  toJSON (Basics n l pic e phn w s loc ps) = object
-    [ "name"     .= n
-    , "label"    .= l
-    , "picture"  .= pic
-    , "email"    .= e
-    , "phone"    .= phn
-    , "website"  .= w
-    , "summary"  .= s
-    , "location" .= loc
-    , "profiles" .= ps
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True} ''Basics)
 
 -- | Information about a particular organization that you've worked or
 -- volunteered at
 data Organization = Organization
-                  { orgName          :: Maybe T.Text   -- ^ e.g. Facebook
-                  , orgPosition      :: Maybe T.Text   -- ^ e.g. Software Engineer
-                  , orgSite          :: Maybe URL      -- ^ e.g. http://facebook.com
-                  , orgStartDate     :: Maybe UTCTime  -- ^ resume.json uses the ISO 8601 date standard e.g. 2014-06-29
-                  , orgEndDate       :: Maybe UTCTime  -- ^ e.g. 2012-06-29
-                  , orgSummary       :: Maybe T.Text   -- ^ Give an overview of your responsibilities at the company
-                  , orgHighlights    :: [T.Text] -- ^ Specify multiple accomplishments, e.g. Increased profits by 20% from 2011-2012 through viral advertising
+                  { orgName       :: Maybe T.Text   -- ^ e.g. Facebook
+                  , orgPosition   :: Maybe T.Text   -- ^ e.g. Software Engineer
+                  , orgSite       :: Maybe URL      -- ^ e.g. http://facebook.com
+                  , orgStartDate  :: Maybe UTCTime  -- ^ resume.json uses the ISO 8601 date standard e.g. 2014-06-29
+                  , orgEndDate    :: Maybe UTCTime  -- ^ e.g. 2012-06-29
+                  , orgSummary    :: Maybe T.Text   -- ^ Give an overview of your responsibilities at the company
+                  , orgHighlights :: [T.Text] -- ^ Specify multiple accomplishments, e.g. Increased profits by 20% from 2011-2012 through viral advertising
                   } deriving (Eq, Read, Show)
 
 -- | Specify that you worked at a particular @Organization@ (as opposed to
@@ -285,19 +261,7 @@ data Skill = Skill
            , skillKeywords :: [T.Text] -- ^ List some keywords pertaining to this skill, e.g. HTML
            } deriving (Eq, Read, Show)
 
-instance FromJSON Skill where
-  parseJSON (Object v) =
-    Skill <$> v .:? "name"
-          <*> v .:? "level"
-          <*> v .:? "keywords" .!= []
-  parseJSON _ = mzero
-
-instance ToJSON Skill where
-  toJSON (Skill n l ks) = object
-    [ "name"     .= n
-    , "level"    .= l
-    , "keywords" .= ks
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True, fieldLabelModifier = (\(x:xs) -> toLower x : xs) . drop 5} ''Skill)
 
 -- | List any other languages you speak
 data Language = Language
@@ -312,21 +276,11 @@ data Interest = Interest
               , interestKeywords :: [T.Text] -- ^ e.g. Friedrich Nietzsche
               } deriving (Eq, Read, Show)
 
-instance FromJSON Interest where
-  parseJSON (Object v) =
-    Interest <$> v .:? "name"
-             <*> v .:? "keywords" .!= []
-  parseJSON _ = mzero
-
-instance ToJSON Interest where
-  toJSON (Interest n ks) = object
-    [ "name"     .= n
-    , "keywords" .= ks
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True, fieldLabelModifier = (\(x:xs) -> toLower x : xs) . drop 8} ''Interest)
 
 -- | List any references you have received
 data Reference = Reference
-               { refName   :: Maybe T.Text -- ^ e.g. Timothy Cook
+               { refName      :: Maybe T.Text -- ^ e.g. Timothy Cook
                , refReference :: Maybe T.Text -- ^ e.g. Joe blogs was a great employee, who turned up to work at least once a week. He exceeded my expectations when it came to doing nothing.
                } deriving (Eq, Read, Show)
 
