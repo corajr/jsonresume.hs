@@ -33,9 +33,8 @@ module Data.JSONResume
 import qualified Data.Text           as T
 import qualified Data.HashMap.Strict as H
 
-import System.Locale       (defaultTimeLocale)
 import Data.Time           (UTCTime)
-import Data.Time.Format    (formatTime, parseTime)
+import Data.Time.Format    (formatTime, parseTimeM, defaultTimeLocale)
 import Data.Aeson          (ToJSON (..), FromJSON (..), Value (..),
                             object, (.:?), (.!=), (.=), withText)
 import Data.Aeson.Types    (Parser)
@@ -410,7 +409,7 @@ dateToJSON t = String $ T.pack $ formatTime defaultTimeLocale "%F" t
 -- Read in a date using JSON Resume's preferred date format (YYYY-mm-dd)
 dateFromJSON :: Value -> Parser UTCTime
 dateFromJSON = withText "UTCTime" $ \t ->
-  case parseTime defaultTimeLocale "%F" (T.unpack t) of
+  case parseTimeM True defaultTimeLocale "%F" (T.unpack t) of
     Just d -> pure d
     _      -> fail "could not parse ISO-8601 date"
 
