@@ -270,7 +270,7 @@ referenceJSON = [here|
 referenceParsed :: Reference
 referenceParsed = Reference
   { refName = Just "Erlich Bachman"
-  , reference = Just "It is my pleasure to recommend Richard, his performance working as a consultant for Main St. Company proved that he will be a valuable addition to any company."
+  , refReference = Just "It is my pleasure to recommend Richard, his performance working as a consultant for Main St. Company proved that he will be a valuable addition to any company."
   }
 
 resumeJSON :: ByteString

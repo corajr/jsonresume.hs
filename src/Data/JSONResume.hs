@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | This module provides a native Haskell representation for the JSON Resume
 -- scheme, as defined at
@@ -33,57 +34,36 @@ module Data.JSONResume
 import qualified Data.Text           as T
 import qualified Data.HashMap.Strict as H
 
+import Data.Char (toLower)
 import Data.Time           (UTCTime)
 import Data.Time.Format    (formatTime, parseTimeM, defaultTimeLocale)
 import Data.Aeson          (ToJSON (..), FromJSON (..), Value (..),
                             object, (.:?), (.!=), (.=), withText)
+import Data.Aeson.TH
 import Data.Aeson.Types    (Parser)
 
 import Control.Applicative (Applicative (..), (<$>), (<*>), pure)
 import Control.Monad       (mzero)
 
--- | This is the main datatype, representing the overall structure of the JSON
--- Resume specification.
-data Resume = Resume
-            { basics       :: Maybe Basics
-            , work         :: [Work]
-            , volunteer    :: [Volunteer]
-            , education    :: [Education]
-            , awards       :: [Award]
-            , publications :: [Publication]
-            , skills       :: [Skill]
-            , languages    :: [Language]
-            , interests    :: [Interest]
-            , references   :: [Reference]
-            } deriving (Eq, Read, Show)
+-- A couple of utility functions to help with parsing --
+-- At the top due to TH
 
-instance FromJSON Resume where
-  parseJSON (Object v) =
-    Resume <$> v .:? "basics"
-           <*> v .:? "work"         .!= []
-           <*> v .:? "volunteer"    .!= []
-           <*> v .:? "education"    .!= []
-           <*> v .:? "awards"       .!= []
-           <*> v .:? "publications" .!= []
-           <*> v .:? "skills"       .!= []
-           <*> v .:? "languages"    .!= []
-           <*> v .:? "interests"    .!= []
-           <*> v .:? "references"   .!= []
-  parseJSON _ = mzero
+-- Write out a date using JSON Resume's preferred date format (YYYY-mm-dd)
+dateToJSON :: UTCTime -> Value
+dateToJSON t = String $ T.pack $ formatTime defaultTimeLocale "%F" t
 
-instance ToJSON Resume where
-  toJSON (Resume b w v e a p s l i r) = object
-    [ "basics"       .= b
-    , "work"         .= w
-    , "volunteer"    .= v
-    , "education"    .= e
-    , "awards"       .= a
-    , "publications" .= p
-    , "skills"       .= s
-    , "languages"    .= l
-    , "interests"    .= i
-    , "references"   .= r
-    ]
+-- Read in a date using JSON Resume's preferred date format (YYYY-mm-dd)
+dateFromJSON :: Value -> Parser UTCTime
+dateFromJSON = withText "UTCTime" $ \t ->
+  case parseTimeM True defaultTimeLocale "%F" (T.unpack t) of
+    Just d -> pure d
+    _      -> fail "could not parse ISO-8601 date"
+
+-- A version of (.:?) which is parameterised on the parsing function to use
+potentially :: (Value -> Parser a) -> H.HashMap T.Text Value -> T.Text -> Parser (Maybe a)
+potentially f obj key = case H.lookup key obj of
+  Nothing -> pure Nothing
+  Just v  -> Just <$> f v
 
 -- | Simple representation for URLs
 type URL = T.Text
@@ -100,23 +80,7 @@ data Address = Address
              , region      :: Maybe T.Text -- ^ The general region where you live. Can be a US state, or a province, for instance.
              } deriving (Eq, Read, Show)
 
-instance FromJSON Address where
-  parseJSON (Object v) =
-    Address <$> v .:? "address"
-            <*> v .:? "postalCode"
-            <*> v .:? "city"
-            <*> v .:? "countryCode"
-            <*> v .:? "region"
-  parseJSON _ = mzero
-
-instance ToJSON Address where
-  toJSON (Address a p c cc r) = object
-    [ "address"     .= a
-    , "postalCode"  .= p
-    , "city"        .= c
-    , "countryCode" .= cc
-    , "region"      .= r
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True} ''Address)
 
 -- | Specify any number of social networks that you participate in
 data Profile = Profile
@@ -125,19 +89,7 @@ data Profile = Profile
              , url      :: Maybe URL    -- ^ e.g. http://twitter.com/neutralthoughts
              } deriving (Eq, Read, Show)
 
-instance FromJSON Profile where
-  parseJSON (Object v) =
-    Profile <$> v .:? "network"
-            <*> v .:? "username"
-            <*> v .:? "url"
-  parseJSON _ = mzero
-
-instance ToJSON Profile where
-  toJSON (Profile n u web) = object
-    [ "network"  .= n
-    , "username" .= u
-    , "url"      .= web
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True} ''Profile)
 
 -- | Basic information
 data Basics = Basics
@@ -353,17 +305,7 @@ data Language = Language
               , fluency  :: Maybe T.Text -- ^ e.g. Fluent, Beginner
               } deriving (Eq, Read, Show)
 
-instance FromJSON Language where
-  parseJSON (Object v) =
-    Language <$> v .:? "language"
-             <*> v .:? "fluency"
-  parseJSON _ = mzero
-
-instance ToJSON Language where
-  toJSON (Language l f) = object
-    [ "language" .= l
-    , "fluency"  .= f
-    ]
+$(deriveJSON defaultOptions{omitNothingFields = True} ''Language)
 
 data Interest = Interest
               { interestName     :: Maybe T.Text   -- ^ e.g. Philosophy
@@ -385,36 +327,51 @@ instance ToJSON Interest where
 -- | List any references you have received
 data Reference = Reference
                { refName   :: Maybe T.Text -- ^ e.g. Timothy Cook
-               , reference :: Maybe T.Text -- ^ e.g. Joe blogs was a great employee, who turned up to work at least once a week. He exceeded my expectations when it came to doing nothing.
+               , refReference :: Maybe T.Text -- ^ e.g. Joe blogs was a great employee, who turned up to work at least once a week. He exceeded my expectations when it came to doing nothing.
                } deriving (Eq, Read, Show)
 
-instance FromJSON Reference where
+$(deriveJSON defaultOptions{omitNothingFields = True, fieldLabelModifier = (\(x:xs) -> toLower x : xs) . drop 3} ''Reference)
+
+-- | This is the main datatype, representing the overall structure of the JSON
+-- Resume specification.
+data Resume = Resume
+            { basics       :: Maybe Basics
+            , work         :: [Work]
+            , volunteer    :: [Volunteer]
+            , education    :: [Education]
+            , awards       :: [Award]
+            , publications :: [Publication]
+            , skills       :: [Skill]
+            , languages    :: [Language]
+            , interests    :: [Interest]
+            , references   :: [Reference]
+            } deriving (Eq, Read, Show)
+
+instance FromJSON Resume where
   parseJSON (Object v) =
-    Reference <$> v .:? "name"
-              <*> v .:? "reference"
+    Resume <$> v .:? "basics"
+           <*> v .:? "work"         .!= []
+           <*> v .:? "volunteer"    .!= []
+           <*> v .:? "education"    .!= []
+           <*> v .:? "awards"       .!= []
+           <*> v .:? "publications" .!= []
+           <*> v .:? "skills"       .!= []
+           <*> v .:? "languages"    .!= []
+           <*> v .:? "interests"    .!= []
+           <*> v .:? "references"   .!= []
   parseJSON _ = mzero
 
-instance ToJSON Reference where
-  toJSON (Reference n r) = object
-    [ "name"      .= n
-    , "reference" .= r
+instance ToJSON Resume where
+  toJSON (Resume b w v e a p s l i r) = object
+    [ "basics"       .= b
+    , "work"         .= w
+    , "volunteer"    .= v
+    , "education"    .= e
+    , "awards"       .= a
+    , "publications" .= p
+    , "skills"       .= s
+    , "languages"    .= l
+    , "interests"    .= i
+    , "references"   .= r
     ]
 
--- A couple of utility functions to help with parsing --
-
--- Write out a date using JSON Resume's preferred date format (YYYY-mm-dd)
-dateToJSON :: UTCTime -> Value
-dateToJSON t = String $ T.pack $ formatTime defaultTimeLocale "%F" t
-
--- Read in a date using JSON Resume's preferred date format (YYYY-mm-dd)
-dateFromJSON :: Value -> Parser UTCTime
-dateFromJSON = withText "UTCTime" $ \t ->
-  case parseTimeM True defaultTimeLocale "%F" (T.unpack t) of
-    Just d -> pure d
-    _      -> fail "could not parse ISO-8601 date"
-
--- A version of (.:?) which is parameterised on the parsing function to use
-potentially :: (Value -> Parser a) -> H.HashMap T.Text Value -> T.Text -> Parser (Maybe a)
-potentially f obj key = case H.lookup key obj of
-  Nothing -> pure Nothing
-  Just v  -> Just <$> f v
